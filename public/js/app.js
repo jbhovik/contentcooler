@@ -63,14 +63,13 @@ var App = React.createClass({
             <span className="icon-bar"></span>
             <span className="icon-bar"></span>
             </button>
-            <a className="navbar-brand" href="/">List-o-matic</a>
+            <a className="navbar-brand" href="/">Welcome to Content Cooler</a>
             </div>
             <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             {this.state.loggedIn ? (
                 <ul className="nav navbar-nav">
-                <li><a href="#/list">All</a></li>
-                <li><a href="#/list/active">Active</a></li>
-                <li><a href="#/list/completed">Completed</a></li>
+                <li><a href="#/upload">Upload Content</a></li>
+                <li><a href="#/view-content">View Content</a></li>
                 <li><a href="#" onClick={this.logout}>Logout</a></li>
                 </ul>
                 ) : (<div></div>)}
@@ -92,6 +91,28 @@ var Home = React.createClass({
         return (
             <p>
             <Link className="btn btn-default" to="login">Login</Link> or <Link className="btn btn-warning" to="register">Register</Link>
+            </p>
+            );
+    }
+});
+
+// Upload page
+var Upload = React.createClass({
+    render: function() {
+        return (
+            <p>
+            <Link className="btn btn-default" to="upload">Upload Content</Link>
+            </p>
+            );
+    }
+});
+
+// View Content page
+var ViewContent = React.createClass({
+    render: function() {
+        return (
+            <p>
+            <Link className="btn btn-default" to="view-content">View Content</Link>
             </p>
             );
     }
@@ -130,7 +151,7 @@ var Login = React.createClass({
                 return this.setState({
                     error: true
                 });
-            this.context.router.transitionTo('/list');
+            this.context.router.transitionTo('/view-content');
         }.bind(this));
     },
 
@@ -654,8 +675,8 @@ var auth = {
 var routes = (
     <Route name="app" path="/" handler={App}>
 	    <Route name="list" path ="/list" handler={List}/>
-	    <Route name="active" path = "/list/active" handler={List}/>
-	    <Route name="completed" path = "/list/completed" handler={List}/>
+        <Route name="upload" path = "/upload" handler={Upload}/>
+        <Route name="view-content" path = "/view-content" handler={ViewContent}/>
 	    <Route name="login" handler={Login}/>
 	    <Route name="register" handler={Register}/>
     <DefaultRoute handler={Home}/>
