@@ -98,11 +98,32 @@ var Home = React.createClass({
 
 // Upload page
 var Upload = React.createClass({
+
+    contextTypes: {
+        router: React.PropTypes.func
+    },
+
+    // handle upload button submit
+    upload: function(event) {
+        // prevent default browser submit
+        event.preventDefault();
+        var upload_name = this.refs.upload_filename.getDOMNode().value;
+
+        if (!upload_name) {
+            return;
+        }
+    },
+
     render: function() {
         return (
-            <p>
-            <Link className="btn btn-default" to="upload">Upload Content</Link>
-            </p>
+            <div>
+            <h2>Upload Content</h2>
+            <form className="form-vertical">
+            <input type="text" placeholder="Choose some content" ref="upload_name" autoFocus={true} />
+            <input type="file" ref="upload_filename"/>
+            <input className="btn" id="upload1" type="submit" value="Upload" onClick={this.upload}/>
+            </form>
+            </div>
             );
     }
 });
