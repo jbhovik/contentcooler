@@ -1,6 +1,7 @@
 var app = require('./express.js');
 var User = require('./user.js');
 var Item = require('./item.js');
+var Content = require('./content.js');
 
 // setup body parser
 var bodyParser = require('body-parser');
@@ -92,6 +93,26 @@ app.post('/api/items', function (req,res) {
 		}
 		res.json({item:item});
 	    });
+        } else {
+            res.sendStatus(403);
+        }
+    });
+});
+
+// add an item
+app.post('/api/content', function (req,res) {
+    // validate the supplied token
+    // get indexes
+    user = User.verifyToken(req.headers.authorization, function(user) {
+        if (user) {
+            // if the token is valid, create the item for the user
+        Content.create({data:req.body.data,user:user.id}, function(err,content) {
+        if (err) {
+            res.sendStatus(403);
+            return;
+        }
+        res.json({content:'content saved'});
+        });
         } else {
             res.sendStatus(403);
         }

@@ -9,6 +9,7 @@ var db = mongoose.connect('mongodb://localhost/my_list');
 var api = require('./models/api.js');
 var User = require('./models/user.js');
 var Item = require('./models/item.js');
+var Content = require('./models/content.js');
 
 // start the server
 var server = app.listen(3000, function () {

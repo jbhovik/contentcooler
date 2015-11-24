@@ -103,14 +103,56 @@ var Upload = React.createClass({
         router: React.PropTypes.func
     },
 
+    _: function (el) {
+        return document.getElementById(el);
+    },
+
     // handle upload button submit
     upload: function(event) {
         // prevent default browser submit
         event.preventDefault();
-        var upload_name = this.refs.upload_filename.getDOMNode().value;
-
-        if (!upload_name) {
+        event.stopPropagation();
+        var fileInput = this._("file1").files[0];
+        if (!fileInput) {
             return;
+        }
+
+        var formdata = new FormData();
+        formdata.append("file1", fileInput);
+
+        api.addContent(formdata, this.updateCB);
+    },
+
+    progressHandler: function(event) {
+        this._("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
+        var percent = (event.loaded / event.total) * 100;
+        this._("progressBar").value = Math.round(percent);
+        this._("status").innerHTML = Math.round(percent) + "% uploaded...please wait";
+    },
+
+    completeHandler: function(event) {
+        this._("status").innerHTML = event.target.responseText;
+        this._("progressBar").value = 0;
+
+    },
+
+    errorHandler: function (event) {
+        this._("status").innerHTML = "Upload failed";
+    },
+
+    abortHandler: function (event) {
+        this._("status").innerHTML = "Upload aborted";
+    },
+
+    // callback for upload success
+    updateCB: function(status, res) {
+        if (status) {
+            console.log("success in updateCB");
+            console.log(res);
+        } 
+        else {
+            console.log('no success in updateCB');
+            console.log(res);
         }
     },
 
@@ -118,10 +160,13 @@ var Upload = React.createClass({
         return (
             <div>
             <h2>Upload Content</h2>
-            <form className="form-vertical">
+            <form className="form-vertical" id="upload_form" encType="multipart/form-data" method="post">
             <input type="text" placeholder="Choose some content" ref="upload_name" autoFocus={true} />
-            <input type="file" ref="upload_filename"/>
+            <input id="file1"type="file" name="file1" ref="upload_filename"/>
             <input className="btn" id="upload1" type="submit" value="Upload" onClick={this.upload}/>
+            <progress id="progressBar" value="0" max="100"></progress>
+            <h3 id="status"></h3>
+            <p id="loaded_n_total"></p>
             </form>
             </div>
             );
@@ -552,6 +597,34 @@ var api = {
         });
 
     },
+
+    // add an item, call the callback when complete
+    addContent: function(data, cb) {
+        var url = "/api/content";
+        $.ajax({
+            url: url,
+            contentType: 'application/json',
+            data: JSON.stringify({
+                item: {
+                    'data': data
+                }
+            }),
+            type: 'POST',
+            headers: {'Authorization': localStorage.token},
+            success: function(res) {
+                if (cb)
+                    cb(true, res);
+            },
+            error: function(xhr, status, err) {
+                // if there is an error, remove the login token
+                delete localStorage.token;
+                if (cb)
+                    cb(false, status);
+            }
+        });
+
+    },
+
     // update an item, call the callback when complete
     updateItem: function(item, cb) {
         var url = "/api/items/" + item.id;
