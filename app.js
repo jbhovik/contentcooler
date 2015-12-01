@@ -3,7 +3,7 @@ var app = require('./models/express.js');
 
 // setup mongoose
 var mongoose = require('mongoose');
-var db = mongoose.connect('mongodb://localhost/my_list');
+var db = mongoose.connect('mongodb://localhost/contentcooler');
 
 // models
 var api = require('./models/api.js');
