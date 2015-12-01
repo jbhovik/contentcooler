@@ -22,6 +22,6 @@ contentSchema.set('toJSON', {
 contentSchema.plugin(findOrCreate);
 
 // create item
-var Content = mongoose.model('content', contentSchema);
+var Content = mongoose.model('videos', contentSchema);
 
 module.exports = Content;

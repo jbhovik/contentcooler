@@ -111,21 +111,22 @@ app.post('/api/content', function (req,res) {
     // get indexes
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
-            // if the token is valid, create the item for the user
+        // if the token is valid, create the item for the user
         
-        Content.create({data:req.body.data,user:user.id}, function(err,content) {
+        var form = new multiparty.Form();
+ 
+        form.parse(req, function(err, fields, files) {
+        //res.writeHead(200, {'content-type': 'text/plain'});
+        //res.write('received upload:\n\n');
+        //res.end(util.inspect({fields: fields, files: files}));
+        var video_obj = files.file1;
+        Content.create({data:video_obj,user:user.id}, function(err,content) {
         if (err) {
             res.sendStatus(403);
             return;
         }
-        var form = new multiparty.Form();
- 
-        form.parse(req, function(err, fields, files) {
-        res.writeHead(200, {'content-type': 'text/plain'});
-        res.write('received upload:\n\n');
-        res.end(util.inspect({fields: fields, files: files}));
+        res.json({content:content});
         });
-        //res.json({content:'content saved broseph'});
         });
         } else {
             res.sendStatus(403);
@@ -151,6 +152,31 @@ app.get('/api/items/:item_id', function (req,res) {
                 }
                 // return value is the item as JSON
                 res.json({item:item});
+            });
+        } else {
+            res.sendStatus(403);
+        }
+    });
+});
+
+// get a video
+app.get('/api/content/:video_id', function (req,res) {
+    // validate the supplied token
+    user = User.verifyToken(req.headers.authorization, function(user) {
+        if (user) {
+            // if the token is valid, then find the requested item
+            Content.findById(req.params.video_id, function(err, video) {
+        if (err) {
+            res.sendStatus(403);
+            return;
+        }
+                // get the item if it belongs to the user, otherwise return an error
+                if (video.user != user) {
+                    res.sendStatus(403);
+            return;
+                }
+                // return value is the item as JSON
+                res.json({video:video});
             });
         } else {
             res.sendStatus(403);
