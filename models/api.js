@@ -4,6 +4,10 @@ var app = require('./express.js');
 var User = require('./user.js');
 var Item = require('./item.js');
 var Content = require('./content.js');
+var multiparty = require('multiparty');
+var sys = require('sys');
+var util = require('util');
+var sizeof = require('object-sizeof');
 
 // setup body parser
 var bodyParser = require('body-parser');
@@ -108,14 +112,20 @@ app.post('/api/content', function (req,res) {
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
             // if the token is valid, create the item for the user
-        var foo = '${file1}';
-        console.log(req.body.file1);
+        
         Content.create({data:req.body.data,user:user.id}, function(err,content) {
         if (err) {
             res.sendStatus(403);
             return;
         }
-        res.json({content:'content saved broseph'});
+        var form = new multiparty.Form();
+ 
+        form.parse(req, function(err, fields, files) {
+        res.writeHead(200, {'content-type': 'text/plain'});
+        res.write('received upload:\n\n');
+        res.end(util.inspect({fields: fields, files: files}));
+        });
+        //res.json({content:'content saved broseph'});
         });
         } else {
             res.sendStatus(403);
