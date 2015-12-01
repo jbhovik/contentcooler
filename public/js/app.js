@@ -1,3 +1,4 @@
+// Client side server
 // React Router
 // http://rackt.github.io/react-router/
 var Router = ReactRouter;
@@ -113,6 +114,7 @@ var Upload = React.createClass({
         event.preventDefault();
         event.stopPropagation();
         var fileInput = this._("file1").files[0];
+
         if (!fileInput) {
             return;
         }
@@ -120,10 +122,25 @@ var Upload = React.createClass({
         var formdata = new FormData();
         formdata.append("file1", fileInput);
 
-        api.addContent(formdata, this.updateCB);
+        var ajax = new XMLHttpRequest();
+        ajax.upload.addEventListener("progress", this.progressHandler, false);
+        ajax.addEventListener("load", this.completeHandler, false);
+        ajax.addEventListener("error", this.errorHandler, false);
+        ajax.addEventListener("abort", this.abortHandler, false);
+        console.log("opening");
+        ajax.open("POST", "/api/content");
+        ajax.setRequestHeader("Authorization", localStorage.token);
+        ajax.setRequestHeader("enctype","multipart/form-data");
+        console.log("sending");
+        ajax.send(formdata);
+       
+        //formdata.append("test", {value: 0});
+
+        //api.addContent(formdata, this.updateCB);
     },
 
     progressHandler: function(event) {
+        console.log("in progressHandler");
         this._("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
         var percent = (event.loaded / event.total) * 100;
         this._("progressBar").value = Math.round(percent);
@@ -131,16 +148,18 @@ var Upload = React.createClass({
     },
 
     completeHandler: function(event) {
+        console.log("in completeHandler");
         this._("status").innerHTML = event.target.responseText;
         this._("progressBar").value = 0;
-
     },
 
     errorHandler: function (event) {
+        console.log("in errorHandler");
         this._("status").innerHTML = "Upload failed";
     },
 
     abortHandler: function (event) {
+        console.log("in abortHandler");
         this._("status").innerHTML = "Upload aborted";
     },
 
@@ -603,12 +622,9 @@ var api = {
         var url = "/api/content";
         $.ajax({
             url: url,
-            contentType: 'application/json',
-            data: JSON.stringify({
-                item: {
-                    'data': data
-                }
-            }),
+            data: data,
+            processData: false,
+            contentType: false,
             type: 'POST',
             headers: {'Authorization': localStorage.token},
             success: function(res) {

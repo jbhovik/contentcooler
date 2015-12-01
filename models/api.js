@@ -1,3 +1,5 @@
+// Server side app
+
 var app = require('./express.js');
 var User = require('./user.js');
 var Item = require('./item.js');
@@ -106,12 +108,14 @@ app.post('/api/content', function (req,res) {
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
             // if the token is valid, create the item for the user
+        var foo = '${file1}';
+        console.log(req.body.file1);
         Content.create({data:req.body.data,user:user.id}, function(err,content) {
         if (err) {
             res.sendStatus(403);
             return;
         }
-        res.json({content:'content saved'});
+        res.json({content:'content saved broseph'});
         });
         } else {
             res.sendStatus(403);
