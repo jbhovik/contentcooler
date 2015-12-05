@@ -8,6 +8,8 @@ var multiparty = require('multiparty');
 var sys = require('sys');
 var util = require('util');
 var sizeof = require('object-sizeof');
+var FormData = require('form-data');
+var fs = require('fs');
 
 // setup body parser
 var bodyParser = require('body-parser');
@@ -105,22 +107,24 @@ app.post('/api/items', function (req,res) {
     });
 });
 
-// add an item
+// add a video
 app.post('/api/content', function (req,res) {
     // validate the supplied token
-    // get indexes
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
-        // if the token is valid, create the item for the user
         
         var form = new multiparty.Form();
- 
         form.parse(req, function(err, fields, files) {
-        //res.writeHead(200, {'content-type': 'text/plain'});
-        //res.write('received upload:\n\n');
-        //res.end(util.inspect({fields: fields, files: files}));
-        var video_obj = files.file1;
-        Content.create({data:video_obj,user:user.id}, function(err,content) {
+        var video_path = String(files.file1[0].path);
+        
+        fs.rename(video_path, '/home/jhovik/contentcooler/movie.mp4', function (err) {
+        if (err) {
+            console.log(err);
+        }
+        console.log('renamed complete');
+        });
+
+        Content.create({video:video_path,user:user.id}, function(err,content) {
         if (err) {
             res.sendStatus(403);
             return;
@@ -165,18 +169,30 @@ app.get('/api/content/:video_id', function (req,res) {
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
             // if the token is valid, then find the requested item
+            //db.inventory.find( { type: "snacks" } )
+
             Content.findById(req.params.video_id, function(err, video) {
         if (err) {
+            console.log(err);
             res.sendStatus(403);
             return;
         }
-                // get the item if it belongs to the user, otherwise return an error
-                if (video.user != user) {
-                    res.sendStatus(403);
-            return;
-                }
+            // get the item if it belongs to the user, otherwise return an error
+            //     if (video.user != user) {
+            //         res.sendStatus(403);
+            // return;
+             //   }
                 // return value is the item as JSON
-                res.json({video:video});
+            
+            fs.readFile('/home/jhovik/contentcooler/movie.mp4', 'utf8', function(err,data) {
+            if (err) {
+            return console.log(err);
+            }
+            res.setHeader('content-type', 'video/mp4');
+            res.send(data);
+            });
+                //res.json({video:formdata});
+                //res.send();
             });
         } else {
             res.sendStatus(403);
