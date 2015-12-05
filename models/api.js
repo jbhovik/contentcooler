@@ -87,6 +87,26 @@ app.get('/api/items', function (req,res) {
     });
 });
 
+// get all movies for the user
+app.get('/api/movies', function (req,res) {
+    // validate the supplied token
+    user = User.verifyToken(req.headers.authorization, function(user) {
+        if (user) {
+            // if the token is valid, find all the user's items and return them
+        Content.find({user:user.id}, function(err, movies) {
+        if (err) {
+            res.sendStatus(403);
+            return;
+        }
+        // return value is the list of items as JSON
+        res.json({movies: movies});
+        });
+        } else {
+            res.sendStatus(403);
+        }
+    });
+});
+
 // add an item
 app.post('/api/items', function (req,res) {
     // validate the supplied token
@@ -116,15 +136,14 @@ app.post('/api/content', function (req,res) {
         var form = new multiparty.Form();
         form.parse(req, function(err, fields, files) {
         var video_path = String(files.file1[0].path);
-        
-        fs.rename(video_path, '/home/jhovik/contentcooler/movie.mp4', function (err) {
+        var video_name_array = video_path.split('/');
+        var video_name = video_name_array[video_name_array.length - 1];
+        fs.rename(video_path, '/home/jhovik/contentcooler/movies/' + video_name, function (err) {
         if (err) {
             console.log(err);
         }
-        console.log('renamed complete');
         });
-
-        Content.create({video:video_path,user:user.id}, function(err,content) {
+        Content.create({video:video_name,user:user.id}, function(err,content) {
         if (err) {
             res.sendStatus(403);
             return;
@@ -169,30 +188,18 @@ app.get('/api/content/:video_id', function (req,res) {
     user = User.verifyToken(req.headers.authorization, function(user) {
         if (user) {
             // if the token is valid, then find the requested item
-            //db.inventory.find( { type: "snacks" } )
-
-            Content.findById(req.params.video_id, function(err, video) {
+            Content.findById(req.params.video_id, function(err, movie) {
         if (err) {
-            console.log(err);
             res.sendStatus(403);
             return;
         }
-            // get the item if it belongs to the user, otherwise return an error
-            //     if (video.user != user) {
-            //         res.sendStatus(403);
-            // return;
-             //   }
+                // get the item if it belongs to the user, otherwise return an error
+                if (movie.user != user.id) {
+                    res.sendStatus(403);
+            return;
+                }
                 // return value is the item as JSON
-            
-            fs.readFile('/home/jhovik/contentcooler/movie.mp4', 'utf8', function(err,data) {
-            if (err) {
-            return console.log(err);
-            }
-            res.setHeader('content-type', 'video/mp4');
-            res.send(data);
-            });
-                //res.json({video:formdata});
-                //res.send();
+                res.json({movie:movie});
             });
         } else {
             res.sendStatus(403);
@@ -246,6 +253,45 @@ app.delete('/api/items/:item_id', function (req,res) {
 		}
                 res.sendStatus(200);
             });
+        } else {
+            res.sendStatus(403);
+        }
+    });
+});
+
+// delete a movie
+app.delete('/api/movie/:movie_id', function (req,res) {
+    // validate the supplied token
+    user = User.verifyToken(req.headers.authorization, function(user) {
+        if (user) {
+            // Remove the mongo entry
+            Content.findByIdAndRemove(req.params.movie_id, function(err,movie) {
+        if (err) {
+            res.sendStatus(403);
+            return;
+        }
+            // Remove the file
+            fs.unlink('/home/jhovik/contentcooler/movies/' + movie.video, function (err) {
+            if (err) {
+                console.log('Error in delete one movie');
+            }
+                console.log('successfully deleted /tmp/hello');
+            });
+            res.sendStatus(200);
+            });
+        } else {
+            res.sendStatus(403);
+        }
+    });
+});
+
+// delete all movies
+app.delete('/api/allmovies', function (req,res) {
+    // validate the supplied token
+    user = User.verifyToken(req.headers.authorization, function(user) {
+        if (user) {
+            Content.remove({});
+            res.sendStatus(200);
         } else {
             res.sendStatus(403);
         }
