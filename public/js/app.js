@@ -70,8 +70,8 @@ var App = React.createClass({
             <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             {this.state.loggedIn ? (
                 <ul className="nav navbar-nav">
-                <li><a href="#/upload">Upload Content</a></li>
-                <li><a href="#/view-content">View Content</a></li>
+                <li><a href="#/upload">Library</a></li>
+                <li><a href="#/view-content">Watch</a></li>
                 <li><a href="#" onClick={this.logout}>Logout</a></li>
                 </ul>
                 ) : (<div></div>)}
@@ -99,7 +99,7 @@ var Home = React.createClass({
 });
 
 // Upload page
-var Upload = React.createClass({
+var Library = React.createClass({
 
     contextTypes: {
         router: React.PropTypes.func
@@ -234,7 +234,7 @@ var Upload = React.createClass({
 });
 
 // View Content page
-var ViewContent = React.createClass({
+var Watch = React.createClass({
     contextTypes: {
         router: React.PropTypes.func
     },
@@ -955,8 +955,8 @@ var auth = {
 var routes = (
     <Route name="app" path="/" handler={App}>
 	    <Route name="list" path ="/list" handler={List}/>
-        <Route name="upload" path = "/upload" handler={Upload}/>
-        <Route name="view-content" path = "/view-content" handler={ViewContent}/>
+        <Route name="library" path = "/upload" handler={Library}/>
+        <Route name="watch" path = "/view-content" handler={Watch}/>
 	    <Route name="login" handler={Login}/>
 	    <Route name="register" handler={Register}/>
     <DefaultRoute handler={Home}/>
