@@ -7,6 +7,7 @@ var Link = Router.Link;
 var Route = Router.Route;
 var RouteHandler = Router.RouteHandler;
 var Redirect = Router.Redirect;
+var Multiparty = Multiparty;
 
 // Map of components
 // App
@@ -114,6 +115,7 @@ var Upload = React.createClass({
         event.preventDefault();
         event.stopPropagation();
         var fileInput = this._("file1").files[0];
+        console.log(fileInput);
 
         if (!fileInput) {
             return;
@@ -127,11 +129,9 @@ var Upload = React.createClass({
         ajax.addEventListener("load", this.completeHandler, false);
         ajax.addEventListener("error", this.errorHandler, false);
         ajax.addEventListener("abort", this.abortHandler, false);
-        console.log("opening");
         ajax.open("POST", "/api/content");
         ajax.setRequestHeader("Authorization", localStorage.token);
         ajax.setRequestHeader("enctype","multipart/form-data");
-        console.log("sending");
         ajax.send(formdata);
        
         //formdata.append("test", {value: 0});
@@ -140,7 +140,6 @@ var Upload = React.createClass({
     },
 
     progressHandler: function(event) {
-        console.log("in progressHandler");
         this._("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
         var percent = (event.loaded / event.total) * 100;
         this._("progressBar").value = Math.round(percent);
@@ -148,19 +147,24 @@ var Upload = React.createClass({
     },
 
     completeHandler: function(event) {
-        console.log("in completeHandler");
         this._("status").innerHTML = event.target.responseText;
         this._("progressBar").value = 0;
     },
 
     errorHandler: function (event) {
-        console.log("in errorHandler");
         this._("status").innerHTML = "Upload failed";
     },
 
     abortHandler: function (event) {
-        console.log("in abortHandler");
         this._("status").innerHTML = "Upload aborted";
+    },
+
+    deleteAllMovies: function (event) {
+        api.deleteAllMovies(this.deleteAllMoviesCB);
+    },
+
+    deleteOneMovie: function (event) {
+        api.deleteOneMovie('56634d810f725a90148ae3cd', this.deleteOneMovieCB);
     },
 
     // callback for upload success
@@ -175,14 +179,51 @@ var Upload = React.createClass({
         }
     },
 
+    // callback for get video success
+    getVideoCB: function(status, res) {
+        if (status) {
+            console.log("success in getVideoCB");
+            console.log(res);
+        } 
+        else {
+            console.log('no success in getVideoCB');
+            console.log(res);
+        }
+    },
+
+    // callback for delete all videos success
+    deleteAllMoviesCB: function(status, res) {
+        if (status) {
+            console.log("success in deleteAllMoviesCB");
+            console.log(res);
+        } 
+        else {
+            console.log('no success in deleteAllMoviesCB');
+            console.log(res);
+        }
+    },
+
+    // callback for delete one video success
+    deleteOneMovieCB: function(status, res) {
+        if (status) {
+            console.log("success in deleteOneMovieCB");
+            console.log(res);
+        } 
+        else {
+            console.log('no success in deleteOneMovieCB');
+            console.log(res);
+        }
+    },
+
     render: function() {
         return (
             <div>
             <h2>Upload Content</h2>
-            <form className="form-vertical" id="upload_form" encType="multipart/form-data" method="post">
-            <input type="text" placeholder="Choose some content" ref="upload_name" autoFocus={true} />
+            <form className="form-vertical" id="upload_form" encType="multipart/form-data">
             <input id="file1"type="file" name="file1" ref="upload_filename"/>
             <input className="btn" id="upload1" type="submit" value="Upload" onClick={this.upload}/>
+            <input className="btn" id="delete1" type="submit" value="Delete All Movies" onClick={this.deleteAllMovies}/>
+            <input className="btn" id="delete2" type="submit" value="Delete A Movie" onClick={this.deleteOneMovie}/>
             <progress id="progressBar" value="0" max="100"></progress>
             <h3 id="status"></h3>
             <p id="loaded_n_total"></p>
@@ -194,11 +235,58 @@ var Upload = React.createClass({
 
 // View Content page
 var ViewContent = React.createClass({
+    contextTypes: {
+        router: React.PropTypes.func
+    },
+
+    _: function (el) {
+        return document.getElementById(el);
+    },
+
+    // initial state
+    getInitialState: function() {
+        return {
+            // list of items in the todo list
+            movies: [],
+        };
+    },
+
+    // when the component loads, get the list of movies
+    componentDidMount: function() {
+        api.getVideos(this.getVideosCB);
+    },
+
+    getVideos: function() {
+        event.preventDefault();
+        event.stopPropagation();
+
+        api.getVideos(this.getVideosCB);
+    },
+
+    // callback for upload success
+    getVideosCB: function(status, data) {
+        if (status) {
+            // set the state for the list of items
+            this.setState({
+                movies: data.movies
+            });
+            console.log('Got the movies list');
+            console.log(this.state.movies[0].video);
+        } else {
+            // if the API call fails, redirect to the login page
+            //this.context.router.transitionTo('/login');
+            console.log('Failure in getVideosCB');
+        }
+    },
+
     render: function() {
         return (
-            <p>
-            <Link className="btn btn-default" to="view-content">View Content</Link>
-            </p>
+            <div>
+            <h2>View Content</h2>
+            <form className="form-vertical" id="view_content_form" encType="multipart/form-data" method="get">
+            <input className="btn" id="get_video1" type="submit" value="Get Video" onClick={this.getVideos}/>
+            </form>
+            </div>
             );
     }
 });
@@ -590,6 +678,28 @@ var api = {
             }
         });
     },
+
+    // get the list of items, call the callback when complete
+    getVideos: function(cb) {
+        var url = "/api/movies";
+        $.ajax({
+            url: url,
+            dataType: 'json',
+            type: 'GET',
+            headers: {'Authorization': localStorage.token},
+            success: function(res) {
+                if (cb)
+                    cb(true, res);
+            },
+            error: function(xhr, status, err) {
+                // if there is an error, remove the login token
+                delete localStorage.token;
+                if (cb)
+                    cb(false, status);
+            }
+        });
+    },
+
     // add an item, call the callback when complete
     addItem: function(title, cb) {
         var url = "/api/items";
@@ -667,9 +777,69 @@ var api = {
             }
         });
     },
+
+    getVideo: function(video_id, cb) {
+        var url = "/api/content/" + video_id;
+        $.ajax({
+            url: url,
+            type: 'GET',
+            headers: {'Authorization': localStorage.token},
+            success: function(res) {
+                
+                if (cb)
+                    cb(true, res);
+            },
+            error: function(xhr, status, err) {
+                // if there is any error, remove any login token
+                delete localStorage.token;
+                if (cb)
+                    cb(false, status);
+            }
+        });
+    },
     // delete an item, call the callback when complete
     deleteItem: function(item, cb) {
         var url = "/api/items/" + item.id;
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            headers: {'Authorization': localStorage.token},
+            success: function(res) {
+                if (cb)
+                    cb(true, res);
+            },
+            error: function(xhr, status, err) {
+                // if there is an error, remove any login token
+                delete localStorage.token;
+                if (cb)
+                    cb(false, status);
+            }
+        });
+    },
+
+    // delete a movie, call the callback when complete
+    deleteOneMovie: function(movie_id, cb) {
+        var url = "/api/movie/" + movie_id;
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            headers: {'Authorization': localStorage.token},
+            success: function(res) {
+                if (cb)
+                    cb(true, res);
+            },
+            error: function(xhr, status, err) {
+                // if there is an error, remove any login token
+                delete localStorage.token;
+                if (cb)
+                    cb(false, status);
+            }
+        });
+    },
+
+    // delete all movie, call the callback when complete
+    deleteAllMovies: function(cb) {
+        var url = "/api/allmovies/";
         $.ajax({
             url: url,
             type: 'DELETE',
